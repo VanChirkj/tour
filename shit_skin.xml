@@ -1,0 +1,2821 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<krpano version="1.19">
+
+  <!-- unsupported kind of display : PointMap -->
+
+
+  
+  <!-- Spot Style - Default Polygon Spot Style -->
+  <style name="PolygonDefaultPolygonSpotStyle"
+           visible="false"
+           bordercolor="0xffffff"
+           fillcolor="0xffffff"
+           borderwidth="0"
+           borderalpha="1"
+           fillalpha="0.40000000000000002"
+           capture="false"
+           onhover="onhoverPolygonDefaultPolygonSpotStyle"
+           onover="onoverPolygonDefaultPolygonSpotStyle"
+           onout="onoutPolygonDefaultPolygonSpotStyle"
+           />
+  <action name="onhoverPolygonDefaultPolygonSpotStyle">
+    showTooltip('hotspot');
+  </action>
+
+  <action name="onoverPolygonDefaultPolygonSpotStyle">
+    set(borderwidth, 0);
+  </action>
+
+  <action name="onoutPolygonDefaultPolygonSpotStyle">
+
+    set(borderwidth, 0);
+    hideTooltip();
+  </action>
+
+
+
+<!-- ********** -->
+<!-- Double Click -->
+<!-- id : doubleclick -->
+<!-- ********** -->
+
+  <plugin name="doubleclick" url.flash="%FIRSTXML%/graphics/doubleclick/fieldofview_dc.swf" url.html5="%FIRSTXML%/graphics/doubleclick/dctouch.min.js" keep="true" ondblclick="doubleclick_ondoubleclick();"/>
+  <action name="doubleclick_ondoubleclick">switchFullscreen();
+
+
+  </action>
+
+<!-- ********** -->
+<!-- Context menu -->
+<!-- id : contextmenu -->
+<!-- ********** -->
+  <contextmenu fullscreen="false" versioninfo="false" touch="true">
+    <item name="normal"        onclick="setViewNormal();
+" separator="true"/>
+    <item name="architectural" onclick="setViewArchitectural();
+"/>
+    <item name="littleplanet"  onclick="setViewLittlePlanet();
+"/>
+    <item name="fullscreenentry" onclick="enterFullscreen();
+" separator="true"/>
+  </contextmenu>
+
+  <events name="contextmenuevents" keep="true" 
+    onenterfullscreen="updateContextMenu" onexitfullscreen="updateContextMenu" 
+    onxmlcomplete="updateContextMenu" 
+    changetourlanguage="updateContextMenu" 
+    />
+  <events name="contextmenuvrevents" keep="true" 
+    onvravailable="updateContextMenu();" onvrunavailable="updateContextMenu();"
+    devices="html5"
+    />
+  <action name="updateContextMenu">
+    getmessage(contextmenu.item[normal].caption, contextmenunormallabel);
+    getmessage(contextmenu.item[architectural].caption, contextmenuarchitecturallabel);
+    set(sceneisfull360, false);
+    if(scene[get(xml.scene)].full360,
+      sub(viewhfov, panoview.hmax, panoview.hmin);
+      if (viewhfov == 360,
+        sub(viewvfov, panoview.vmax, panoview.vmin);
+        if (viewvfov == 180,
+          set(sceneisfull360, true);
+        );
+      );
+    );
+    if (sceneisfull360 AND (device.webgl OR device.flash),
+      set(contextmenu.item[littleplanet].visible, true);
+      getmessage(contextmenu.item[littleplanet].caption, contextmenulittleplanetlabel);
+    ,
+      set(contextmenu.item[littleplanet].visible, false);
+    );
+    if (device.fullscreensupport,
+      if(tour_fullscreen,
+        getmessage(contextmenu.item[fullscreenentry].caption, contextmenucloseFsLabel);
+        set(contextmenu.item[fullscreenentry].onclick, exitFullscreen();
+);
+       ,
+        getmessage(contextmenu.item[fullscreenentry].caption, contextmenuopenFsLabel);
+        set(contextmenu.item[fullscreenentry].onclick, enterFullscreen();
+);
+      );
+     ,
+      set(contextmenu.item[fullscreenentry].visible, false);
+    );
+  </action>
+
+<!-- ********* -->
+<!-- Gyroscope -->
+<!-- ********* -->
+
+
+
+<plugin name="gyroscope"
+        url="%FIRSTXML%/graphics/gyro2.js"
+        keep="true"
+        devices="no-desktop.and.html5"
+
+        onunavailable="checkGyroUnavailable();"
+        sensor_mode="1"
+        friction="auto"
+        autocalibration="true"
+        touch_mode="full"
+        onavailable="delayedcall(1, checkGyroAvailability(););"
+        enabled="false"
+        activated="false"
+        />
+
+<events name="gyroscopeEvents" onnewpano="planarGyroscopeTest();" keep="true" />
+
+<action name="planarGyroscopeTest">
+  if(plugin[gyroscope],
+          if(scene[get(xml.scene)].full360,
+            set(sceneisfull360, false);
+            sub(viewhfov, panoview.hmax, panoview.hmin);
+            if (viewhfov == 360,
+              sub(viewvfov, panoview.vmax, panoview.vmin);
+              if (viewvfov == 180,
+                set(sceneisfull360, true);
+              );
+            );
+            if (sceneisfull360,
+              set(plugin[gyroscope].camroll, true);
+            ,
+              set(plugin[gyroscope].camroll, false);
+            );
+          ,
+            set(plugin[gyroscope].camroll, false);
+          );
+  );
+</action>
+
+<action name="changeGyroscopeState">
+  if(plugin[gyroscope],
+    if (plugin[gyroscope].isavailable,
+        if(%1,
+          set(plugin[gyroscope].activated,true);
+        ,
+          set(plugin[gyroscope].activated,false);
+        );
+        if (%1 != plugin[gyroscope].enabled,
+          if(plugin[gyroscope].activated,
+            switch(plugin[gyroscope].enabled);
+          ,
+            set(plugin[gyroscope].enabled, false);
+          );
+          if (plugin[gyroscope].enabled, events.dispatch(ongyroscopeon);, events.dispatch(ongyroscopeoff););
+        );
+    );
+  );
+</action>
+
+<action name="checkGyroAvailability">
+  if(plugin[gyroscope],
+    if (plugin[gyroscope].isavailable,
+      ifnot(tour_firstlittleplanet,
+        
+        switch(plugin[gyroscope].enabled);
+        set(plugin[gyroscope].activated,true);
+        
+        set(tour_gyroscopedevices, true);
+        events.dispatch(ongyroscopeavailable);
+      ,
+        delayedcall(1, checkGyroAvailability(););
+      );
+    ,
+      set(tour_gyroscopedevices, false);
+    );
+    if (plugin[gyroscope].enabled, events.dispatch(ongyroscopeon);, events.dispatch(ongyroscopeoff););
+  ,
+    checkGyroUnavailable();
+  );
+</action>
+
+<action name="checkGyroUnavailable">
+  set(plugin[gyroscope].activated, false);
+  set(plugin[gyroscope].enabled, false);
+  set(tour_gyroscopedevices, false);
+  events.dispatch(ongyroscopeunavailable);
+</action>
+
+<!-- ********** -->
+<!-- iControl Bar -->
+<!-- id : controlBar_i -->
+<!-- ********** -->
+
+  <krpano controlBar_ibarbuilt="false" controlBar_ibackgroundwidthwhenclosed="0" controlBar_ibackgroundwidthwhenopened="0" controlBar_iIsOpened="false" />
+  <events name="controlBar_ievents" 
+    onxmlcomplete="controlBar_ibuildMenuBar();" 
+
+
+    keep="true" />
+
+
+
+  <action name="controlBar_ibuildMenuBar">
+    ifnot (controlBar_ibarbuilt, controlBar_ibuildMenu(); set(controlBar_ibarbuilt, true););
+  </action>
+
+  <style name="controlBar_i_btn_style"
+         keep="true"
+         edge="right"
+         align="right"
+         x="0" y="0"
+         width="40" height="40"
+         crop="0|0|60|60"
+         onovercrop="0|60|60|60"
+         ondowncrop="0|120|60|60"
+         />
+  <style name="controlBar_i_btn_style_off"
+         keep="true"
+         edge="right"
+         align="right"
+         x="0" y="0"
+         width="40" height="40"
+         />
+
+  <layer name="controlBar_i_menu_bg"
+         keep="true"
+         type="container"
+         zorder="4"
+         width="40"
+         height="40"
+         align="bottom"
+         x="10" y="10"
+         maskchildren="true"
+         rotate="0"
+         visible="false"
+         >
+
+    <layer name="controlBar_ibtn_gyroscope_off"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_gyroscope.png"
+            style="controlBar_i_btn_style"
+            onclick="disableGyroscope();
+"
+            devices="html5"
+            visible="false"
+            />
+    <layer name="controlBar_ibtn_gyroscope_on"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_gyroscope.png"
+            style="controlBar_i_btn_style"
+            onclick="enableGyroscope();
+"
+            devices="html5"
+            visible="false"
+            />
+    <layer name="controlBar_ibtn_gyroscope_not"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_gyroscope_off.png"
+            style="controlBar_i_btn_style_off"
+            enabled="true"
+            capture="false"
+            devices="html5"
+            visible="false"
+            />
+
+
+    <layer name="controlBar_ibtn_ctrlmode_move_to"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_move_to.png"
+            style="controlBar_i_btn_style"
+            onclick="setControlModeMoveTo();
+"
+            visible="false"
+            devices="desktop"
+            />
+    <layer name="controlBar_ibtn_ctrlmode_drag_to"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_drag_to.png"
+            style="controlBar_i_btn_style"
+            onclick="setControlModeDragTo();
+"
+            visible="false"
+            devices="desktop"
+            />
+
+    <layer name="controlBar_ibtn_in"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_zoom_in.png"
+            ondown="viewControlZoomIn(false);"
+            onup="viewControlZoomStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+    <layer name="controlBar_ibtn_out"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_zoom_out.png"
+            ondown="viewControlZoomOut(false);
+"
+            onup="viewControlZoomStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+
+    <layer name="controlBar_ibtn_left"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_move_left.png"
+            ondown="viewControlMoveLeft(false);
+"
+            onup="viewControlMoveHoriStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+    <layer name="controlBar_ibtn_right"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_move_right.png"
+            ondown="viewControlMoveRight(false);
+"
+            onup="viewControlMoveHoriStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+
+    <layer name="controlBar_ibtn_up"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_move_up.png"
+            ondown="viewControlMoveUp(false);
+"
+            onup="viewControlMoveVertStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+    <layer name="controlBar_ibtn_down"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_move_down.png"
+            ondown="viewControlMoveDown(false);
+"
+            onup="viewControlMoveVertStop();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="desktop"
+            />
+
+
+
+    <layer name="controlBar_ibtn_prev_pano"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_previous_scene.png"
+            onclick="loadPreviousScene();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+    <layer name="controlBar_ibtn_next_pano"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_next_scene.png"
+            onclick="loadNextScene();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+
+
+    <layer name="controlBar_ibtn_display_map"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_map.png"
+            onclick="controlBar_idisplayMap();"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+    <layer name="controlBar_ibtn_hide_map"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_map.png"
+            onclick="controlBar_ihideMap();"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+
+
+    <layer name="controlBar_ibtn_openfs"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_enter_fs.png"
+            onclick="enterFullscreen();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="fullscreensupport"
+            />
+    <layer name="controlBar_ibtn_closefs"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_close_fs.png"
+            onclick="exitFullscreen();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            devices="fullscreensupport"
+            />
+
+    <layer name="controlBar_ibtn_autorotate_on"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_start_autorotation.png"
+            onclick="resumeautorotation();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+    <layer name="controlBar_ibtn_autorotate_off"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_stop_autorotation.png"
+            onclick="pauseautorotation();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+
+
+
+
+    <layer name="controlBar_ibtn_display_info"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_info.png"
+            onclick="showTourInfo();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+
+    <layer name="controlBar_ibtn_close_info"
+            url="%FIRSTXML%/graphics/icontrolbar/btn_info.png"
+            onclick="hideTourInfo();
+"
+            style="controlBar_i_btn_style"
+            visible="false"
+            />
+
+
+    <layer name="controlBar_ibtn_hidecontrols"
+           url="%FIRSTXML%/graphics/icontrolbar/btn_hide_controls.png"
+           style="controlBar_i_btn_style"
+           onclick="controlBar_ihideMenuControls();hideTourControls();
+"
+           visible="false"
+           />
+    <layer name="controlBar_ibtn_showcontrols"
+           url="%FIRSTXML%/graphics/icontrolbar/btn_show_controls.png"
+           style="controlBar_i_btn_style"
+           onclick="controlBar_ishowMenuControls();showTourControls();
+"
+           visible="false"
+           />
+ </layer>
+
+
+
+
+  <events name="controlBar_igyroscopeavailableevent"
+          ongyroscopeavailable="controlBar_iupdateGyroscopeButtonsAvailability();"
+          ongyroscopeunavailable="controlBar_iupdateGyroscopeButtonsAvailability();"
+          ongyroscopeon="controlBar_ienableGyroscopeButtons(true);"
+          ongyroscopeoff="controlBar_ienableGyroscopeButtons(false);"
+          keep="true" devices="html5" />
+  <krpano controlBar_imenugyroscopeavailable="false" controlBar_imenugyroscopeenabled="false"/>
+  <action name="controlBar_iupdateGyroscopeButtonsAvailability">
+    if (tour_gyroscopedevices,
+      set(controlBar_imenugyroscopeavailable, true);
+      controlBar_iupdateGyroscopeButtons();
+    ,
+      set(controlBar_imenugyroscopeavailable, false);
+      controlBar_iupdateGyroscopeButtons();
+    );
+  </action>
+  <action name="controlBar_ienableGyroscopeButtons">
+    if (tour_gyroscopedevices,
+      set(controlBar_imenugyroscopeenabled, %1);
+      controlBar_iupdateGyroscopeButtons();
+    );
+  </action>
+	<action name="controlBar_iHideGyroscopeButtons">
+		set(layer[controlBar_ibtn_gyroscope_off].visible, false);
+		set(layer[controlBar_ibtn_gyroscope_on].visible, false);
+		if('%1' == 'true' AND plugin[gyroscope],
+			set(layer[controlBar_ibtn_gyroscope_not].visible, true);
+		,
+			set(layer[controlBar_ibtn_gyroscope_not].visible, false);
+		);
+	</action>
+	<action name="controlBar_iShowGyroscopeButtons">
+		if (controlBar_imenugyroscopeavailable,
+			if (controlBar_imenugyroscopeenabled,
+				set(layer[controlBar_ibtn_gyroscope_off].visible, true);
+				set(layer[controlBar_ibtn_gyroscope_on].visible, false);
+			,
+				set(layer[controlBar_ibtn_gyroscope_off].visible, false);
+				set(layer[controlBar_ibtn_gyroscope_on].visible, true);
+			);
+			set(layer[controlBar_ibtn_gyroscope_not].visible, false);
+		,
+			controlBar_iHideGyroscopeButtons(true);
+		);
+	</action>
+	<action name="controlBar_iupdateGyroscopeButtons">
+	if (tour_gyroscopedevices,
+		if (controlBar_iIsOpened,
+			controlBar_iShowGyroscopeButtons();
+		,
+			controlBar_iHideGyroscopeButtons();
+		);
+	,
+		if (controlBar_iIsOpened,
+			controlBar_iHideGyroscopeButtons(true);
+		,
+			controlBar_iHideGyroscopeButtons();
+		);
+	);
+	</action>
+
+
+	<events name="controlBar_icontrolmodechangedevent" 
+		oncontrolmodechanged="controlBar_iupdateControlModeButtons();" 
+		keep="true" />
+	<action name="controlBar_iHideControlModeButtons">
+		set(layer[controlBar_ibtn_ctrlmode_move_to].visible, false);
+		set(layer[controlBar_ibtn_ctrlmode_drag_to].visible, false);
+	</action>
+	<action name="controlBar_iShowControlModeButtons">
+		if (tour_controlmodemousetype == "moveto",
+			set(layer[controlBar_ibtn_ctrlmode_drag_to].visible, true);
+			set(layer[controlBar_ibtn_ctrlmode_move_to].visible, false);
+		,
+			set(layer[controlBar_ibtn_ctrlmode_move_to].visible, true);
+			set(layer[controlBar_ibtn_ctrlmode_drag_to].visible, false);
+		);
+	</action>
+	<action name="controlBar_iupdateControlModeButtons">
+	if (device.desktop,
+		if (controlBar_iIsOpened,
+			controlBar_iShowControlModeButtons();
+		,
+			controlBar_iHideControlModeButtons();
+		);
+	,
+		controlBar_iHideControlModeButtons();
+	);
+	</action>
+
+
+  <action name="controlBar_ihideMenuControls">
+    set(controlBar_iIsOpened, false);
+    set(layer[controlBar_ibtn_hidecontrols].visible, false);
+    set(layer[controlBar_ibtn_showcontrols].visible, true);
+if (scene.count GT 1,
+	set(layer[controlBar_ibtn_next_pano].visible, false);
+	set(layer[controlBar_ibtn_prev_pano].visible, false);
+);
+
+
+if (device.desktop,
+	set(layer[controlBar_ibtn_in].visible, false);
+	set(layer[controlBar_ibtn_out].visible, false);
+);
+if (device.desktop,
+	set(layer[controlBar_ibtn_up].visible, false);
+	set(layer[controlBar_ibtn_down].visible, false);
+);
+if (device.desktop,
+	set(layer[controlBar_ibtn_left].visible, false);
+	set(layer[controlBar_ibtn_right].visible, false);
+);
+	controlBar_iupdateFullscreenButtons();
+
+	controlBar_iupdateInfoButtons();
+
+	controlBar_iupdateAutorotationButtons();
+
+	controlBar_iupdateGyroscopeButtons();
+
+	controlBar_iupdateControlModeButtons();
+
+	controlBar_iupdateMapButtons();
+
+
+
+	set(layer[controlBar_i_menu_bg].width, get(controlBar_ibackgroundwidthwhenclosed));
+
+	set(layer[controlBar_i_menu_bg].visible, true);
+  </action>
+  <action name="controlBar_ishowMenuControls">
+    set(controlBar_iIsOpened, true);
+    set(layer[controlBar_ibtn_hidecontrols].visible, true);
+    set(layer[controlBar_ibtn_showcontrols].visible, false);
+	set(layer[controlBar_i_menu_bg].visible, true);
+if (scene.count GT 1,
+	set(layer[controlBar_ibtn_next_pano].visible, true);
+	set(layer[controlBar_ibtn_prev_pano].visible, true);
+);
+
+
+if (device.desktop,
+	set(layer[controlBar_ibtn_in].visible, true);
+	set(layer[controlBar_ibtn_out].visible, true);
+);
+if (device.desktop,
+	set(layer[controlBar_ibtn_up].visible, true);
+	set(layer[controlBar_ibtn_down].visible, true);
+);
+if (device.desktop,
+	set(layer[controlBar_ibtn_left].visible, true);
+	set(layer[controlBar_ibtn_right].visible, true);
+);
+	controlBar_iupdateFullscreenButtons();
+
+	controlBar_iupdateInfoButtons();
+
+	controlBar_iupdateAutorotationButtons();
+
+	controlBar_iupdateGyroscopeButtons();
+
+	controlBar_iupdateControlModeButtons();
+
+	controlBar_iupdateMapButtons();
+
+
+    set(layer[controlBar_i_menu_bg].width, get(controlBar_ibackgroundwidthwhenopened));
+  </action>
+
+
+	<events name="controlBar_ihideshowinfoevent" 
+		onhidetourinfo="controlBar_iupdateInfoButtons();" 
+		onshowtourinfo="controlBar_iupdateInfoButtons();" 
+		keep="true" />
+	<action name="controlBar_iHideInfoButtons">
+		set(layer[controlBar_ibtn_display_info].visible, false);
+		set(layer[controlBar_ibtn_close_info].visible, false);
+	</action>
+	<action name="controlBar_iShowInfoButtons">
+		if (tour_displayinfo,
+			set(layer[controlBar_ibtn_close_info].visible, true);
+			set(layer[controlBar_ibtn_display_info].visible, false);
+		,
+			set(layer[controlBar_ibtn_display_info].visible, true);
+			set(layer[controlBar_ibtn_close_info].visible, false);
+		);
+	</action>
+	<action name="controlBar_iupdateInfoButtons">
+		if (controlBar_iIsOpened,
+			controlBar_iShowInfoButtons();
+		,
+			controlBar_iHideInfoButtons();
+		);
+	</action>
+
+  <action name="controlBar_idisplayMap">showMap();
+
+  </action>
+  <action name="controlBar_ihideMap">hideMap();
+
+  </action>
+  
+  <events name="controlBar_idisplaymapchangeevent"
+          onshowtourmap="controlBar_iupdateMapButtons();"
+          onhidetourmap="controlBar_iupdateMapButtons();"
+          keep="true"/>
+	<action name="controlBar_iHideMapButtons">
+		set(layer[controlBar_ibtn_display_map].visible, false);
+		set(layer[controlBar_ibtn_hide_map].visible, false);
+	</action>
+	<action name="controlBar_iShowMapButtons">
+		if (tour_displaymap,
+			set(layer[controlBar_ibtn_hide_map].visible, true);
+			set(layer[controlBar_ibtn_display_map].visible, false);
+		,
+			set(layer[controlBar_ibtn_display_map].visible, true);
+			set(layer[controlBar_ibtn_hide_map].visible, false);
+		);
+	</action>
+	<action name="controlBar_iupdateMapButtons">
+		if (controlBar_iIsOpened,
+			controlBar_iShowMapButtons();
+		,
+			controlBar_iHideMapButtons();
+		);
+	</action>
+
+
+
+  <events name="controlBar_imenufullscreenchangeevent"
+          onenterfullscreen="controlBar_iupdateFullscreenButtons();"
+          onexitfullscreen="controlBar_iupdateFullscreenButtons();"
+          keep="true"/>
+	<action name="controlBar_iHideFullscreenButtons">
+		set(layer[controlBar_ibtn_openfs].visible , false);
+		set(layer[controlBar_ibtn_closefs].visible, false);
+	</action>
+	<action name="controlBar_iShowFullscreenButtons">
+		if (device.fullscreensupport,
+			if(tour_fullscreen,
+				set(layer[controlBar_ibtn_openfs].visible , false);
+				set(layer[controlBar_ibtn_closefs].visible, true);
+			,
+				set(layer[controlBar_ibtn_openfs].visible ,true);
+				set(layer[controlBar_ibtn_closefs].visible,false);
+			);
+		,
+			controlBar_iHideFullscreenButtons();
+		);
+	</action>
+	<action name="controlBar_iupdateFullscreenButtons">
+		if (controlBar_iIsOpened,
+			controlBar_iShowFullscreenButtons();
+		,
+			controlBar_iHideFullscreenButtons();
+		);
+	</action>
+
+	<events name="controlBar_iAutorotationEvents"
+		onstartautorotation="controlBar_iupdateAutorotationButtons();"
+		onresumeautorotation="controlBar_iupdateAutorotationButtons();"
+		onstopautorotation="controlBar_iupdateAutorotationButtons();"
+		onpauseautorotation="controlBar_iupdateAutorotationButtons();"
+		keep="true"/>
+	<action name="controlBar_iHideAutorotationButtons">
+		set(layer[controlBar_ibtn_autorotate_off].visible, false);
+		set(layer[controlBar_ibtn_autorotate_on].visible , false);
+	</action>
+	<action name="controlBar_iShowAutorotationButtons">
+		if(autorotate.enabled == false,
+			set(layer[controlBar_ibtn_autorotate_off].visible, false);
+			set(layer[controlBar_ibtn_autorotate_on].visible , true);
+		,
+			set(layer[controlBar_ibtn_autorotate_off].visible, true);
+			set(layer[controlBar_ibtn_autorotate_on].visible , false);
+		);
+	</action>
+	<action name="controlBar_iupdateAutorotationButtons">
+		if (controlBar_iIsOpened,
+			controlBar_iShowAutorotationButtons();
+		,
+			controlBar_iHideAutorotationButtons();
+		);
+	</action>
+
+
+
+  <action name="controlBar_ibuildMenu">
+    
+    set(controlBar_ibutton_pos, 0);
+
+	set(controlBar_ibackgroundwidthwhenclosed, 40);
+    set(layer[controlBar_ibtn_hidecontrols].x, get(controlBar_ibutton_pos));
+    set(layer[controlBar_ibtn_showcontrols].x, get(controlBar_ibutton_pos));
+    inc(controlBar_ibutton_pos, 45);
+
+
+    set(layer[controlBar_ibtn_display_info].x, get(controlBar_ibutton_pos));
+    set(layer[controlBar_ibtn_close_info].x  , get(controlBar_ibutton_pos));
+    inc(controlBar_ibutton_pos, 45);
+
+
+      if (device.fullscreensupport,
+        set(layer[controlBar_ibtn_openfs].x , get(controlBar_ibutton_pos));
+        set(layer[controlBar_ibtn_closefs].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+      );
+
+
+      set(layer[controlBar_ibtn_display_map].x , get(controlBar_ibutton_pos));
+      set(layer[controlBar_ibtn_hide_map].x    , get(controlBar_ibutton_pos));
+      inc(controlBar_ibutton_pos, 45);
+
+
+      set(layer[controlBar_ibtn_autorotate_on].x , get(controlBar_ibutton_pos));
+      set(layer[controlBar_ibtn_autorotate_off].x, get(controlBar_ibutton_pos));
+      inc(controlBar_ibutton_pos, 45);
+
+
+
+    if (device.desktop,
+      set(layer[controlBar_ibtn_ctrlmode_drag_to].x, get(controlBar_ibutton_pos));
+      set(layer[controlBar_ibtn_ctrlmode_move_to].x, get(controlBar_ibutton_pos));
+      inc(controlBar_ibutton_pos, 45);
+    );
+
+
+
+
+      if(plugin[gyroscope],
+        set(controlBar_iDisplayGyroscopeButton, false);
+        if (device.tablet, set(controlBar_iDisplayGyroscopeButton, true););
+        if (device.mobile, set(controlBar_iDisplayGyroscopeButton, true););
+        if(controlBar_iDisplayGyroscopeButton,
+          set(layer[controlBar_ibtn_gyroscope_on].x , get(controlBar_ibutton_pos));
+          set(layer[controlBar_ibtn_gyroscope_off].x, get(controlBar_ibutton_pos));
+          set(layer[controlBar_ibtn_gyroscope_not].x, get(controlBar_ibutton_pos));
+          inc(controlBar_ibutton_pos, 45);
+        );
+      );
+
+
+      if (device.desktop,
+        set(layer[controlBar_ibtn_right].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+        set(layer[controlBar_ibtn_left].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+      );
+
+      if (device.desktop,
+        set(layer[controlBar_ibtn_down].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+        set(layer[controlBar_ibtn_up].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+      );
+
+      if (device.desktop,
+        set(layer[controlBar_ibtn_out].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+        set(layer[controlBar_ibtn_in].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+      );
+
+    if (scene.count GT 1,
+        set(layer[controlBar_ibtn_next_pano].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+        set(layer[controlBar_ibtn_prev_pano].x, get(controlBar_ibutton_pos));
+        inc(controlBar_ibutton_pos, 45);
+      );
+
+
+
+      dec(controlBar_ibutton_pos, 5);
+
+      set(controlBar_ibackgroundwidthwhenopened, get(controlBar_ibutton_pos));
+
+
+    
+      set(layer[controlBar_i_menu_bg].width, get(controlBar_ibackgroundwidthwhenopened));
+	
+	
+	
+    </action>
+
+	<events name="controlBar_iStartTourEvents" onTourStart="controlBar_iCallOnStartTour();" keep="true" />
+	
+	<action name="controlBar_iCallOnStartTour">
+		
+		controlBar_ishowMenuControls();
+	</action>
+
+
+
+  <!-- ************* -->
+  <!-- Panorama Menu -->
+  <!-- ************* -->
+
+<ptplugin name="panoramaMenu" engine="kolorMenu">
+	<settings>
+		<option name="position" value="topleft" type="string" />
+		<option name="orientation" value="horizontal" type="string" />
+		<option name="sub_orientation" value="vertical" type="string" />
+		<option name="margin_x" value="10" type="int" />
+		<option name="margin_y" value="10" type="int" />
+		<option name="background_color" value="bfb6a6" type="string" />
+		<option name="background_alpha" value="1" type="float" />
+		<option name="item_spacer" value="5" type="int" />
+		<option name="border_radius" value="7" type="int" />
+		<option name="full_size" value="false" type="bool" />
+		<option name="use_out_effect" value="true" type="bool" />
+		<option name="item_out_border_radius" value="7" type="int" />
+		<option name="item_hover_border_radius" value="7" type="int" />
+		<option name="item_out_border_width" value="0" type="int" />
+		<option name="item_hover_border_width" value="0" type="int" />
+		<option name="item_out_bg_color" value="bfb6a6" type="string" />
+		<option name="item_out_bg_alpha" value="1" type="float" />
+		<option name="item_out_font_color" value="000000" type="string" />
+		<option name="item_out_font_family" value="Times New Roman" type="string" />
+		<option name="item_out_font_size" value="16" type="int" />
+		<option name="item_out_font_weight" value="bold" type="string" />
+		<option name="item_out_font_style" value="normal" type="string" />
+		<option name="item_out_font_decoration" value="normal" type="string" />
+		<option name="use_hover_effect" value="true" type="bool" />
+		<option name="item_hover_bg_color" value="9f988a" type="string" />
+		<option name="item_hover_bg_alpha" value="1" type="float" />
+		<option name="item_hover_font_color" value="000000" type="string" />
+		<option name="item_hover_font_family" value="Times New Roman" type="string" />
+		<option name="item_hover_font_size" value="16" type="int" />
+		<option name="item_hover_font_weight" value="bold" type="string" />
+		<option name="item_hover_font_style" value="normal" type="string" />
+		<option name="item_hover_font_decoration" value="normal" type="string" />
+		<option name="padding_main" value="10" type="int" />
+		<option name="padding_sub" value="10" type="int" />
+		<option name="text_align" value="right" type="string" />
+		<option name="item_thumb_max_width" value="160" type="int" />
+		<option name="item_thumb_max_height" value="80" type="int" />
+		
+		<option name="zorder" value="5" type="int" />
+		<option name="use_i18n" value="true" type="bool" />
+	</settings>
+	<internaldata>
+				<group name="group_1"
+						titleID="panogroup458_title"
+						thumbnail=""
+						subMenu="true"
+						cssClass="panogroup458"> 
+
+				
+				
+						<item name="group_1_item_1"
+							action="invokeKrFunction('mainloadscene', 'pano417')"
+								titleID="pano417_title"
+								thumbnail="shitdata/pano_417/thumbnail.jpg"
+							cssClass="pano417">
+						
+						
+						</item>
+						<item name="group_1_item_2"
+							action="invokeKrFunction('mainloadscene', 'pano442')"
+								titleID="pano442_title"
+								thumbnail="shitdata/pano_442/thumbnail.jpg"
+							cssClass="pano442">
+						
+						
+						</item>
+						<item name="group_1_item_3"
+							action="invokeKrFunction('mainloadscene', 'pano434')"
+								titleID="pano434_title"
+								thumbnail="shitdata/pano_434/thumbnail.jpg"
+							cssClass="pano434">
+						
+						
+						</item>
+						<item name="group_1_item_4"
+							action="invokeKrFunction('mainloadscene', 'pano416')"
+								titleID="pano416_title"
+								thumbnail="shitdata/pano_416/thumbnail.jpg"
+							cssClass="pano416">
+						
+						
+						</item>
+						<item name="group_1_item_5"
+							action="invokeKrFunction('mainloadscene', 'pano433')"
+								titleID="pano433_title"
+								thumbnail="shitdata/pano_433/thumbnail.jpg"
+							cssClass="pano433">
+						
+						
+						</item>
+						<item name="group_1_item_6"
+							action="invokeKrFunction('mainloadscene', 'pano432')"
+								titleID="pano432_title"
+								thumbnail="shitdata/pano_432/thumbnail.jpg"
+							cssClass="pano432">
+						
+						
+						</item>
+						<item name="group_1_item_7"
+							action="invokeKrFunction('mainloadscene', 'pano452')"
+								titleID="pano452_title"
+								thumbnail="shitdata/pano_452/thumbnail.jpg"
+							cssClass="pano452">
+						
+						
+						</item>
+						<item name="group_1_item_8"
+							action="invokeKrFunction('mainloadscene', 'pano441')"
+								titleID="pano441_title"
+								thumbnail="shitdata/pano_441/thumbnail.jpg"
+							cssClass="pano441">
+						
+						
+						</item>
+						<item name="group_1_item_9"
+							action="invokeKrFunction('mainloadscene', 'pano435')"
+								titleID="pano435_title"
+								thumbnail="shitdata/pano_435/thumbnail.jpg"
+							cssClass="pano435">
+						
+						
+						</item>
+						<item name="group_1_item_10"
+							action="invokeKrFunction('mainloadscene', 'pano455')"
+								titleID="pano455_title"
+								thumbnail="shitdata/pano_455/thumbnail.jpg"
+							cssClass="pano455">
+						
+						
+						</item>
+						<item name="group_1_item_11"
+							action="invokeKrFunction('mainloadscene', 'pano415')"
+								titleID="pano415_title"
+								thumbnail="shitdata/pano_415/thumbnail.jpg"
+							cssClass="pano415">
+						
+						
+						</item>
+						<item name="group_1_item_12"
+							action="invokeKrFunction('mainloadscene', 'pano421')"
+								titleID="pano421_title"
+								thumbnail="shitdata/pano_421/thumbnail.jpg"
+							cssClass="pano421">
+						
+						
+						</item>
+						<item name="group_1_item_13"
+							action="invokeKrFunction('mainloadscene', 'pano424')"
+								titleID="pano424_title"
+								thumbnail="shitdata/pano_424/thumbnail.jpg"
+							cssClass="pano424">
+						
+						
+						</item>
+						<item name="group_1_item_14"
+							action="invokeKrFunction('mainloadscene', 'pano443')"
+								titleID="pano443_title"
+								thumbnail="shitdata/pano_443/thumbnail.jpg"
+							cssClass="pano443">
+						
+						
+						</item>
+						<item name="group_1_item_15"
+							action="invokeKrFunction('mainloadscene', 'pano418')"
+								titleID="pano418_title"
+								thumbnail="shitdata/pano_418/thumbnail.jpg"
+							cssClass="pano418">
+						
+						
+						</item>
+						<item name="group_1_item_16"
+							action="invokeKrFunction('mainloadscene', 'pano422')"
+								titleID="pano422_title"
+								thumbnail="shitdata/pano_422/thumbnail.jpg"
+							cssClass="pano422">
+						
+						
+						</item>
+						<item name="group_1_item_17"
+							action="invokeKrFunction('mainloadscene', 'pano446')"
+								titleID="pano446_title"
+								thumbnail="shitdata/pano_446/thumbnail.jpg"
+							cssClass="pano446">
+						
+						
+						</item>
+						<item name="group_1_item_18"
+							action="invokeKrFunction('mainloadscene', 'pano444')"
+								titleID="pano444_title"
+								thumbnail="shitdata/pano_444/thumbnail.jpg"
+							cssClass="pano444">
+						
+						
+						</item>
+						<item name="group_1_item_19"
+							action="invokeKrFunction('mainloadscene', 'pano429')"
+								titleID="pano429_title"
+								thumbnail="shitdata/pano_429/thumbnail.jpg"
+							cssClass="pano429">
+						
+						
+						</item>
+						<item name="group_1_item_20"
+							action="invokeKrFunction('mainloadscene', 'pano445')"
+								titleID="pano445_title"
+								thumbnail="shitdata/pano_445/thumbnail.jpg"
+							cssClass="pano445">
+						
+						
+						</item>
+						<item name="group_1_item_21"
+							action="invokeKrFunction('mainloadscene', 'pano438')"
+								titleID="pano438_title"
+								thumbnail="shitdata/pano_438/thumbnail.jpg"
+							cssClass="pano438">
+						
+						
+						</item>
+						<item name="group_1_item_22"
+							action="invokeKrFunction('mainloadscene', 'pano448')"
+								titleID="pano448_title"
+								thumbnail="shitdata/pano_448/thumbnail.jpg"
+							cssClass="pano448">
+						
+						
+						</item>
+						<item name="group_1_item_23"
+							action="invokeKrFunction('mainloadscene', 'pano447')"
+								titleID="pano447_title"
+								thumbnail="shitdata/pano_447/thumbnail.jpg"
+							cssClass="pano447">
+						
+						
+						</item>
+						<item name="group_1_item_24"
+							action="invokeKrFunction('mainloadscene', 'pano439')"
+								titleID="pano439_title"
+								thumbnail="shitdata/pano_439/thumbnail.jpg"
+							cssClass="pano439">
+						
+						
+						</item>
+						<item name="group_1_item_25"
+							action="invokeKrFunction('mainloadscene', 'pano420')"
+								titleID="pano420_title"
+								thumbnail="shitdata/pano_420/thumbnail.jpg"
+							cssClass="pano420">
+						
+						
+						</item>
+						<item name="group_1_item_26"
+							action="invokeKrFunction('mainloadscene', 'pano428')"
+								titleID="pano428_title"
+								thumbnail="shitdata/pano_428/thumbnail.jpg"
+							cssClass="pano428">
+						
+						
+						</item>
+						<item name="group_1_item_27"
+							action="invokeKrFunction('mainloadscene', 'pano426')"
+								titleID="pano426_title"
+								thumbnail="shitdata/pano_426/thumbnail.jpg"
+							cssClass="pano426">
+						
+						
+						</item>
+						<item name="group_1_item_28"
+							action="invokeKrFunction('mainloadscene', 'pano453')"
+								titleID="pano453_title"
+								thumbnail="shitdata/pano_453/thumbnail.jpg"
+							cssClass="pano453">
+						
+						
+						</item>
+						<item name="group_1_item_29"
+							action="invokeKrFunction('mainloadscene', 'pano451')"
+								titleID="pano451_title"
+								thumbnail="shitdata/pano_451/thumbnail.jpg"
+							cssClass="pano451">
+						
+						
+						</item>
+						<item name="group_1_item_30"
+							action="invokeKrFunction('mainloadscene', 'pano425')"
+								titleID="pano425_title"
+								thumbnail="shitdata/pano_425/thumbnail.jpg"
+							cssClass="pano425">
+						
+						
+						</item>
+						<item name="group_1_item_31"
+							action="invokeKrFunction('mainloadscene', 'pano450')"
+								titleID="pano450_title"
+								thumbnail="shitdata/pano_450/thumbnail.jpg"
+							cssClass="pano450">
+						
+						
+						</item>
+						<item name="group_1_item_32"
+							action="invokeKrFunction('mainloadscene', 'pano436')"
+								titleID="pano436_title"
+								thumbnail="shitdata/pano_436/thumbnail.jpg"
+							cssClass="pano436">
+						
+						
+						</item>
+						<item name="group_1_item_33"
+							action="invokeKrFunction('mainloadscene', 'pano423')"
+								titleID="pano423_title"
+								thumbnail="shitdata/pano_423/thumbnail.jpg"
+							cssClass="pano423">
+						
+						
+						</item>
+						<item name="group_1_item_34"
+							action="invokeKrFunction('mainloadscene', 'pano449')"
+								titleID="pano449_title"
+								thumbnail="shitdata/pano_449/thumbnail.jpg"
+							cssClass="pano449">
+						
+						
+						</item>
+						<item name="group_1_item_35"
+							action="invokeKrFunction('mainloadscene', 'pano454')"
+								titleID="pano454_title"
+								thumbnail="shitdata/pano_454/thumbnail.jpg"
+							cssClass="pano454">
+						
+						
+						</item>
+						<item name="group_1_item_36"
+							action="invokeKrFunction('mainloadscene', 'pano440')"
+								titleID="pano440_title"
+								thumbnail="shitdata/pano_440/thumbnail.jpg"
+							cssClass="pano440">
+						
+						
+						</item>
+						<item name="group_1_item_37"
+							action="invokeKrFunction('mainloadscene', 'pano419')"
+								titleID="pano419_title"
+								thumbnail="shitdata/pano_419/thumbnail.jpg"
+							cssClass="pano419">
+						
+						
+						</item>
+						<item name="group_1_item_38"
+							action="invokeKrFunction('mainloadscene', 'pano430')"
+								titleID="pano430_title"
+								thumbnail="shitdata/pano_430/thumbnail.jpg"
+							cssClass="pano430">
+						
+						
+						</item>
+						<item name="group_1_item_39"
+							action="invokeKrFunction('mainloadscene', 'pano431')"
+								titleID="pano431_title"
+								thumbnail="shitdata/pano_431/thumbnail.jpg"
+							cssClass="pano431">
+						
+						
+						</item>
+						<item name="group_1_item_40"
+							action="invokeKrFunction('mainloadscene', 'pano427')"
+								titleID="pano427_title"
+								thumbnail="shitdata/pano_427/thumbnail.jpg"
+							cssClass="pano427">
+						
+						
+						</item>
+						<item name="group_1_item_41"
+							action="invokeKrFunction('mainloadscene', 'pano437')"
+								titleID="pano437_title"
+								thumbnail="shitdata/pano_437/thumbnail.jpg"
+							cssClass="pano437">
+						
+						
+						</item>
+					
+				
+				</group>
+	</internaldata>
+</ptplugin>
+
+<action name="kolorMenuJsReady_panoramaMenu">
+	set(ptplugin[panoramaMenu].jsready, true);
+</action>
+
+<action name="showKolorMenu_panoramaMenu">
+	
+	ifnot(ptplugin[panoramaMenu].isOpen,
+		stopdelayedcall(delay_panoramaMenu);
+		set(ptplugin[panoramaMenu].isOpen, true);
+		set(ptplugin[panoramaMenu].displayed, true);
+		js(openKolorMenu(panoramaMenu));
+	,
+		if(ptplugin[panoramaMenu].jsready,
+			stopdelayedcall(delay_panoramaMenu);
+			set(ptplugin[panoramaMenu].displayed, true);
+			js(invokePluginFunction(panoramaMenu, showKolorMenu));
+		,
+			delayedcall(delay_panoramaMenu, 0.1, showKolorMenu_panoramaMenu(););
+		);
+	);
+</action>
+
+<action name="hideKolorMenu_panoramaMenu">
+	if(ptplugin[panoramaMenu].jsready,
+		stopdelayedcall(delay_panoramaMenu);
+		set(ptplugin[panoramaMenu].displayed, false);
+		js(invokePluginFunction(panoramaMenu, hideKolorMenu));
+	,
+		delayedcall(delay_panoramaMenu, 0.1, hideKolorMenu_panoramaMenu(););
+	);
+</action>
+
+
+<action name="changeLanguage_panoramaMenu">
+	if(ptplugin[panoramaMenu].jsready,
+		stopdelayedcall(delay_panoramaMenu);
+		js(invokePluginFunction(panoramaMenu, changeLanguage));
+	,
+		delayedcall(delay_panoramaMenu, 0.1, changeLanguage_panoramaMenu(););
+	);
+</action>
+
+
+<events name="kolorMenuEvents_panoramaMenu" 
+	keep="true"
+	
+	
+	onTourStart="showKolorMenu_panoramaMenu();"
+	changetourlanguage="changeLanguage_panoramaMenu"
+/>
+
+<!-- ********** -->
+<!-- PanotourMaps -->
+<!-- id : panotourmaps -->
+<!-- ********** -->
+
+		<ptplugin name="panotourmaps" lat="45.478595" lng="6.03104" zoom="11" maptypelayer="road" position="left" size="30" resizable="true" multimap="false" openatstart="true" state="true" bgcolor="f2f2f2" zorder="6" centeronspots="true" engine="KolorMap">
+	
+		<radar visible="true" radius="8000" linktozoom="true" quality="8" linecolor="000000" lineopacity="1" linewidth="1" fillcolor="7fff76" fillopacity="0.59999999999999998" />
+		
+		<markers animation="" />
+		
+		
+		<controls zoom="true" pan="true" scale="false" maptype="true" overview="false">
+			<ui draggable="true" scrollable="true" dblclick="true" />
+			<specific />
+		</controls>
+		
+		<markerSelected name="" heading="" fov="" />
+		
+		
+			<!-- PanotourMaps markers counter : 41 -->
+
+
+
+				<marker name="spotmap1172" 
+					lat="52.275294444444" 
+					lng="104.27738611111" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1172_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano417" 
+					hasradar="true" 
+					jsclick="spotmap1172ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1173" 
+					lat="52.275472222222" 
+					lng="104.27740555556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1173_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano442" 
+					hasradar="true" 
+					jsclick="spotmap1173ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1174" 
+					lat="52.276038888889" 
+					lng="104.27803055556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1174_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano434" 
+					hasradar="true" 
+					jsclick="spotmap1174ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1175" 
+					lat="52.276088888889" 
+					lng="104.27693888889" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1175_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano416" 
+					hasradar="true" 
+					jsclick="spotmap1175ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1176" 
+					lat="52.276327777778" 
+					lng="104.27783611111" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1176_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano433" 
+					hasradar="true" 
+					jsclick="spotmap1176ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1177" 
+					lat="52.278244444444" 
+					lng="104.28030277778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1177_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano432" 
+					hasradar="true" 
+					jsclick="spotmap1177ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1178" 
+					lat="52.278519444444" 
+					lng="104.28080277778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1178_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano452" 
+					hasradar="true" 
+					jsclick="spotmap1178ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1179" 
+					lat="52.279552777778" 
+					lng="104.28244166667" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1179_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano441" 
+					hasradar="true" 
+					jsclick="spotmap1179ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1180" 
+					lat="52.280002777778" 
+					lng="104.28280555556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1180_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano435" 
+					hasradar="true" 
+					jsclick="spotmap1180ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1181" 
+					lat="52.281191666667" 
+					lng="104.27689444444" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1181_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano455" 
+					hasradar="true" 
+					jsclick="spotmap1181ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1182" 
+					lat="52.284363888889" 
+					lng="104.28080833333" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1182_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano415" 
+					hasradar="true" 
+					jsclick="spotmap1182ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1183" 
+					lat="52.284769444444" 
+					lng="104.280625" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1183_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano421" 
+					hasradar="true" 
+					jsclick="spotmap1183ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1184" 
+					lat="52.285847222222" 
+					lng="104.28058888889" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1184_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano424" 
+					hasradar="true" 
+					jsclick="spotmap1184ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1185" 
+					lat="52.285222222222" 
+					lng="104.27821111111" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1185_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano443" 
+					hasradar="true" 
+					jsclick="spotmap1185ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1186" 
+					lat="52.286086111111" 
+					lng="104.28139444444" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1186_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano418" 
+					hasradar="true" 
+					jsclick="spotmap1186ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1187" 
+					lat="52.286691666667" 
+					lng="104.27997777778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1187_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano422" 
+					hasradar="true" 
+					jsclick="spotmap1187ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1188" 
+					lat="52.287233333333" 
+					lng="104.28011944444" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1188_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano446" 
+					hasradar="true" 
+					jsclick="spotmap1188ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1189" 
+					lat="52.288997222222" 
+					lng="104.28062777778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1189_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano444" 
+					hasradar="true" 
+					jsclick="spotmap1189ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1190" 
+					lat="52.289513888889" 
+					lng="104.280625" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1190_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano429" 
+					hasradar="true" 
+					jsclick="spotmap1190ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1191" 
+					lat="52.290161111111" 
+					lng="104.28165277778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1191_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano445" 
+					hasradar="true" 
+					jsclick="spotmap1191ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1192" 
+					lat="52.290622222222" 
+					lng="104.28051111111" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1192_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano438" 
+					hasradar="true" 
+					jsclick="spotmap1192ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1193" 
+					lat="52.291152777778" 
+					lng="104.28075555556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1193_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano448" 
+					hasradar="true" 
+					jsclick="spotmap1193ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1194" 
+					lat="52.292130555556" 
+					lng="104.28171666667" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1194_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano447" 
+					hasradar="true" 
+					jsclick="spotmap1194ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1195" 
+					lat="52.293280555556" 
+					lng="104.28615555556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1195_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano439" 
+					hasradar="true" 
+					jsclick="spotmap1195ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1196" 
+					lat="52.289277777778" 
+					lng="104.28758888889" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1196_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano420" 
+					hasradar="true" 
+					jsclick="spotmap1196ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1197" 
+					lat="52.288405555556" 
+					lng="104.28720277778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1197_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano428" 
+					hasradar="true" 
+					jsclick="spotmap1197ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1198" 
+					lat="52.287505555556" 
+					lng="104.28469166667" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1198_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano426" 
+					hasradar="true" 
+					jsclick="spotmap1198ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1199" 
+					lat="52.287561111111" 
+					lng="104.2857" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1199_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano453" 
+					hasradar="true" 
+					jsclick="spotmap1199ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1200" 
+					lat="52.285269444444" 
+					lng="104.28901944444" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1200_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano451" 
+					hasradar="true" 
+					jsclick="spotmap1200ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1201" 
+					lat="52.284405555556" 
+					lng="104.28800277778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1201_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano425" 
+					hasradar="true" 
+					jsclick="spotmap1201ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1202" 
+					lat="52.281194444444" 
+					lng="104.28415" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1202_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano450" 
+					hasradar="true" 
+					jsclick="spotmap1202ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1203" 
+					lat="52.280977777778" 
+					lng="104.28349166667" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1203_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano436" 
+					hasradar="true" 
+					jsclick="spotmap1203ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1204" 
+					lat="52.280502777778" 
+					lng="104.28293611111" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1204_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano423" 
+					hasradar="true" 
+					jsclick="spotmap1204ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1205" 
+					lat="52.277313888889" 
+					lng="104.28442222222" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1205_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano449" 
+					hasradar="true" 
+					jsclick="spotmap1205ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1206" 
+					lat="52.276108333333" 
+					lng="104.288125" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1206_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano454" 
+					hasradar="true" 
+					jsclick="spotmap1206ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1207" 
+					lat="52.274172222222" 
+					lng="104.29115555556" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1207_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano440" 
+					hasradar="true" 
+					jsclick="spotmap1207ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1208" 
+					lat="52.276872222222" 
+					lng="104.296475" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1208_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano419" 
+					hasradar="true" 
+					jsclick="spotmap1208ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1209" 
+					lat="52.289180555556" 
+					lng="104.30147222222" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1209_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano430" 
+					hasradar="true" 
+					jsclick="spotmap1209ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1210" 
+					lat="52.287555555556" 
+					lng="104.30447777778" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1210_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano431" 
+					hasradar="true" 
+					jsclick="spotmap1210ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1211" 
+					lat="52.286022222222" 
+					lng="104.30526944444" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1211_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano427" 
+					hasradar="true" 
+					jsclick="spotmap1211ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+
+
+
+				<marker name="spotmap1212" 
+					lat="52.249983333333" 
+					lng="104.34488888889" 
+					heading="0" 
+					draggable="false" 
+					animated="true" 
+					desc="spotmap1212_tooltip" 
+					desctype="info" 
+					onhover="false" 
+					isscene="true" 
+					scene="pano437" 
+					hasradar="true" 
+					jsclick="spotmap1212ActionSpotMap">
+					<markericon url="spots/pin_curved_2d_shadowed_user_defaultmap1.png" iconwidth="32" iconheight="32" shadow="false" iconanchor="center" />
+				</marker>
+		
+
+
+		
+	</ptplugin>
+	
+	<action name="kolorMapJsReady_panotourmaps">
+		set(ptplugin[panotourmaps].jsready, true);
+	</action>
+	
+	
+	
+		<!-- PanotourMaps markers counter : 41 -->
+				<action name="spotmap1172ActionSpotMap">
+          mainloadscene(pano417);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1173ActionSpotMap">
+          mainloadscene(pano442);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1174ActionSpotMap">
+          mainloadscene(pano434);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1175ActionSpotMap">
+          mainloadscene(pano416);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1176ActionSpotMap">
+          mainloadscene(pano433);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1177ActionSpotMap">
+          mainloadscene(pano432);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1178ActionSpotMap">
+          mainloadscene(pano452);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1179ActionSpotMap">
+          mainloadscene(pano441);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1180ActionSpotMap">
+          mainloadscene(pano435);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1181ActionSpotMap">
+          mainloadscene(pano455);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1182ActionSpotMap">
+          mainloadscene(pano415);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1183ActionSpotMap">
+          mainloadscene(pano421);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1184ActionSpotMap">
+          mainloadscene(pano424);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1185ActionSpotMap">
+          mainloadscene(pano443);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1186ActionSpotMap">
+          mainloadscene(pano418);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1187ActionSpotMap">
+          mainloadscene(pano422);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1188ActionSpotMap">
+          mainloadscene(pano446);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1189ActionSpotMap">
+          mainloadscene(pano444);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1190ActionSpotMap">
+          mainloadscene(pano429);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1191ActionSpotMap">
+          mainloadscene(pano445);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1192ActionSpotMap">
+          mainloadscene(pano438);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1193ActionSpotMap">
+          mainloadscene(pano448);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1194ActionSpotMap">
+          mainloadscene(pano447);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1195ActionSpotMap">
+          mainloadscene(pano439);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1196ActionSpotMap">
+          mainloadscene(pano420);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1197ActionSpotMap">
+          mainloadscene(pano428);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1198ActionSpotMap">
+          mainloadscene(pano426);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1199ActionSpotMap">
+          mainloadscene(pano453);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1200ActionSpotMap">
+          mainloadscene(pano451);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1201ActionSpotMap">
+          mainloadscene(pano425);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1202ActionSpotMap">
+          mainloadscene(pano450);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1203ActionSpotMap">
+          mainloadscene(pano436);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1204ActionSpotMap">
+          mainloadscene(pano423);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1205ActionSpotMap">
+          mainloadscene(pano449);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1206ActionSpotMap">
+          mainloadscene(pano454);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1207ActionSpotMap">
+          mainloadscene(pano440);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1208ActionSpotMap">
+          mainloadscene(pano419);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1209ActionSpotMap">
+          mainloadscene(pano430);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1210ActionSpotMap">
+          mainloadscene(pano431);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1211ActionSpotMap">
+          mainloadscene(pano427);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+				<action name="spotmap1212ActionSpotMap">
+          mainloadscene(pano437);lookat(get(panoview.h), get(panoview.v), get(panoview.fov));
+
+</action>
+	
+
+
+	
+	
+	
+	<!-- Begin PanotourMaps events and actions -->
+	<events name="panotourmapsEvents" 
+	onxmlcomplete="ifnot(panotourmapsMapLoaded,set(tour_displaymap,true););" 
+	onnewpano="panotourmapsActivateDefaultMarker();" 
+	onviewchanged="panotourmapsOnviewchange()" 
+	onhidetourmap="panotourmapsClosetourmap();" 
+	onshowtourmap="if(tour_displaymap,panotourmapsOpentourmap(););" 
+	onenterfullscreen="panotourmapsUpdateMaxMapSize();" 
+	onexitfullscreen="panotourmapsUpdateMaxMapSize();" 
+	keep="true" />
+	
+	
+	<krpano panotourmapsMarkerDefaultSet="false" />
+	<krpano panotourmapsMapLoaded="false" />
+	
+	
+	<action name="panotourmapsUpdateMaxMapSize">
+		js(invokePluginFunction(panotourmaps, updateResizableMapMaxSize));
+	</action>
+	
+	<action name="kolorMapJsReadyLoop_panotourmaps">
+		if(ptplugin[panotourmaps].jsready,
+			stopdelayedcall(jsReadyLoopId_panotourmaps);
+			if(%1 == "close",
+				panotourmapsClosetourmap();
+			,
+				panotourmapsOpentourmap();
+			);
+		,
+			delayedcall(jsReadyLoopId_panotourmaps, 0.2, kolorMapJsReadyLoop_panotourmaps(%1));
+		);
+	</action>
+	
+	<action name="panotourmapsClosetourmap">
+		if(ptplugin[panotourmaps].jsready,
+			set(ptplugin[panotourmaps].state, false);
+			js(invokePluginFunction(panotourmaps, openCloseMap, close));
+		,
+			kolorMapJsReadyLoop_panotourmaps(close);
+		);
+	</action>
+	
+	
+	<action name="panotourmapsOpentourmap">
+		if(ptplugin[panotourmaps].jsready,
+			set(ptplugin[panotourmaps].state, true);
+			js(invokePluginFunction(panotourmaps, openCloseMap, open));
+		,
+			kolorMapJsReadyLoop_panotourmaps(open);
+		);
+	</action>
+	
+	
+	<action name="panotourmapsChangescene">
+		mainloadscene(%1);if(xml.scene != %1,panotourmapsGoMarker(%2););
+	</action>
+	
+	<action name="panotourmapsOnviewchange">
+		if ( panotourmapsMapLoaded == true,
+			ifnot(ptplugin[panotourmaps].markerSelected.name == "",
+				js(invokePluginFunction(panotourmaps, changeDirection, get(view.hlookat), get(view.hfov)));
+			);
+		);
+	</action>
+	
+	<action name="panotourmapsGoMarker">
+		if ( panotourmapsMapLoaded == true,
+			
+			set(ptplugin[panotourmaps].markerSelected.name, %1);
+			set(ptplugin[panotourmaps].markerSelected.heading, get(view.hlookat));
+			set(ptplugin[panotourmaps].markerSelected.fov, get(view.hfov));
+			js(invokePluginFunction(panotourmaps, changeCurrentMarker, %1, get(view.hlookat), get(view.hfov), get(ptplugin[panotourmaps].centeronspots)));
+			
+			if( panotourmapsMarkerDefaultSet == false,
+				js(setMapDefaultMarker(panotourmaps, %1, get(view.hlookat), get(view.hfov)));
+				set(panotourmapsMarkerDefaultSet,true);
+			);
+		);
+	</action>
+	
+	<action name="panotourmapsUnselectMarker">
+		set(ptplugin[panotourmaps].markerSelected.name, "");
+		js(invokePluginFunction(panotourmaps, unselectCurrentMarker));
+		
+		js(setMapDefaultMarker(panotourmaps, null, null, null));
+	</action>
+
+	<action name="panotourmapsActivateDefaultMarker">
+		set(panotourmapsMapLoaded, true);
+		
+		set(panotourmapsMapSpotFound, false);
+		set(defaultmarkerinc_wait,50);
+		for(set(defaultmarkerinc,0), defaultmarkerinc LT ptplugin[panotourmaps].marker.count , inc(defaultmarkerinc),
+			if(defaultmarkerinc_wait == defaultmarkerinc,
+				add(defaultmarkerinc_wait,50);
+				wait(0);
+			);
+			if(ptplugin[panotourmaps].marker[get(defaultmarkerinc)].isscene == true,
+				if(panotourmapsMapSpotFound == false,
+					if(ptplugin[panotourmaps].marker[get(defaultmarkerinc)].scene == xml.scene,
+						ifnot(ptplugin[panotourmaps].marker[get(defaultmarkerinc)].name == ptplugin[panotourmaps].markerSelected.name,
+							panotourmapsGoMarker(get(ptplugin[panotourmaps].marker[get(defaultmarkerinc)].name));
+						);
+						set(panotourmapsMapSpotFound, true);
+					);
+				);
+			);
+		);
+		
+		if(panotourmapsMapSpotFound == false,
+			panotourmapsUnselectMarker();
+		);
+	</action>
+
+
+<!-- ********** -->
+<!-- Description -->
+<!-- id : description -->
+<!-- ********** -->
+
+<ptplugin name="description" canStart="false" newPano="false" openatstart="true" mode="panorama" startMethod="showDescription_description" engine="kolorArea">
+	<settings>
+		<option name="position" value="topright" type="string" />
+		<option name="start_position" value="left" type="string" />
+		<option name="margin_x" value="25" type="int" />
+		<option name="margin_y" value="0" type="int" />
+		<option name="background_color" value="bfb6a6" type="string" />
+		<option name="background_alpha" value="0.90000762951094837" type="float" />
+		<option name="topleft_radius" value="20" type="int" />
+		<option name="topright_radius" value="20" type="int" />
+		<option name="bottomleft_radius" value="20" type="int" />
+		<option name="bottomright_radius" value="20" type="int" />
+		<option name="area_border_width" value="5" type="int" />
+		<option name="area_border_color" value="817b70" type="string" />
+		<option name="area_border_alpha" value="1" type="float" />
+		<option name="padding" value="20" type="int" />
+		<option name="display_title" value="true" type="bool" />
+		<option name="title" value="" type="string" />
+		<option name="title_font" value="Georgia" type="string" />
+		<option name="title_size" value="20" type="int" />
+		<option name="title_weight" value="bold" type="string" />
+		<option name="title_decoration" value="normal" type="string" />
+		<option name="title_color" value="000000" type="string" />
+		<option name="close_displayed" value="false" type="bool" />
+		<option name="close_text" value="descriptiondisplay_close_text" type="string" />
+
+		<option name="overlay_displayed" value="false" type="bool" />
+		<option name="overlay_color" value="000000" type="string" />
+		<option name="overlay_alpha" value="0.50000762951094835" type="float" />
+
+		<option name="area_width" value="600" type="int" />
+		<option name="area_height" value="40" type="int" />
+		<option name="area_width_unit" value="pixel" type="string" />
+		<option name="area_height_unit" value="percent" type="string" />
+		<option name="animation" value="false" type="bool" />
+		<option name="animation_duration" value="500" type="int" />
+		<option name="refresh_content" value="true" type="bool" />
+		<option name="close_callback" value="invokeKrFunction('closeKolorAreaCallback_description')" type="string" />
+		<option name="close_on_click" value="false" type="bool" />
+		<option name="open_callback" value="invokeKrFunction('openKolorAreaCallback_description')" type="string" />
+		<option name="zorder" value="7" type="int" />
+		<option name="use_i18n" value="true" type="bool" />
+	</settings>
+</ptplugin>
+
+<action name="kolorAreaJsReady_description">
+	set(ptplugin[description].jsready, true);
+
+</action>
+
+<action name="updateTitle_description">
+	js(invokePluginFunction(description, changeTitle, get(scene[get(xml.scene)].titleid)));
+</action>
+
+<action name="openKolorArea_description">
+	ifnot(ptplugin[description].isOpen,
+		set(ptplugin[description].isOpen, true);
+		
+		js(showKolorArea(description, get(ptplugin[description].descID)));
+		events.dispatch(onremovedisplayedobject);
+	);
+</action>
+
+<action name="closeKolorArea_description">
+	if(ptplugin[description].isOpen,
+		js(invokePluginFunction(description, closeKolorArea));
+	);
+</action>
+
+<action name="toggleKolorArea_description">
+	if(ptplugin[description].isOpen,
+		closeKolorArea_description();
+	,
+		openKolorArea_description();
+	);
+</action>
+
+<action name="closeKolorAreaCallback_description">
+	set(ptplugin[description].isOpen, false);
+	if(tour_displayinfo,hideTourInfo();
+
+	);
+</action>
+
+
+<action name="openKolorAreaCallback_description">
+	updateTitle_description();
+</action>
+
+<action name="showKolorArea_description">
+	ifnot(ptplugin[description].startMethod == "",
+		delayedcall(0,get(ptplugin[description].startMethod));
+	,
+		set(ptplugin[description].isOpen, true);
+		
+		js(invokePluginFunction(description, showKolorArea, %1));
+		events.dispatch(onremovedisplayedobject);
+	);
+</action>
+	
+<action name="hideKolorArea_description">
+	
+	set(ptplugin[description].isOpen, false);
+	js(invokePluginFunction(description, hideKolorArea, %1));
+</action>
+
+<action name="openDescription_description">
+	openKolorArea_description();
+</action>
+
+<action name="openSpotDescription_description">
+	set(ptplugin[description].descID, %1);
+	openKolorArea_description();
+</action>
+
+<action name="closeDescription_description">
+	set(ptplugin[description].currentGroup, false);
+	if(%1,
+		set(restore_description, true);
+	,
+		set(restore_description, false);
+	);
+	closeKolorArea_description();
+</action> 
+
+<action name="showDescription_description">
+	if(ptplugin[description].canStart,
+		set(ptplugin[description].descID, get(scene[get(xml.scene)].descriptionid));
+		if(ptplugin[description].descID == null,
+			set(ptplugin[description].descID, "");
+		);
+		if(ptplugin[description].descID != "",
+			openDescription_description();
+		,
+			hideKolorArea_description(false);
+		);
+		set(ptplugin[description].startMethod, "");
+	);
+</action>
+
+
+<action name="refreshPanoDescription_description">
+	set(ptplugin[description].descID, get(scene[get(xml.scene)].descriptionid));
+	if(ptplugin[description].descID == null,
+		set(ptplugin[description].descID, "");
+	);
+	if(ptplugin[description].descID != "",
+		if(ptplugin[description].isOpen,
+			js(invokePluginFunction(description, updateKolorArea, get(ptplugin[description].descID)));
+			updateTitle_description();
+		,
+			if(restore_description,
+				showDescription_description();
+			);
+		);
+	,
+		if(tour_displayinfo,
+			delayedcall(0.1,showTourInfo();
+);
+		);
+		closeDescription_description(get(ptplugin[description].isOpen));
+	);
+</action>
+
+<action name="onNewPano_description">
+	if(ptplugin[description].newPano,
+		if(ptplugin[description].startMethod == "",
+			if(ptplugin[description].isOpen,
+				refreshPanoDescription_description();
+			,
+				if(tour_displaycontrols,
+				if(tour_displayinfo,
+				showDescription_description();
+				,
+				refreshPanoDescription_description();
+				);
+				);
+			);
+		);
+	);
+	set(ptplugin[description].newPano, true);
+</action>
+
+<action name="changeLanguage_description">
+	if(ptplugin[description].jsready,
+		stopdelayedcall(delay_description);
+		js(invokePluginFunction(description, changeLanguage, true));
+	,
+		delayedcall(delay_description, 0.1, changeLanguage_description(););
+	);
+</action>
+
+<events name="kolorAreaEvents_description" 
+	keep="true"
+	onTourStart="set(ptplugin[description].canStart, true);if(ptplugin[description].openatstart,if(tour_displaycontrols,showTourInfo();
+););"
+	onshowtourinfo="if(tour_displayinfo,showDescription_description(););"
+	onhidetourinfo="if(ptplugin[description].isOpen,closeDescription_description(false););"
+	onnewpano="onNewPano_description();"
+	hidetourcontrols="if(ptplugin[description].isOpen,hideKolorArea_description(false););"
+	showtourcontrols="if(tour_displayinfo,if(ptplugin[description].isOpen,showKolorArea_description(false);,showDescription_description();););"
+	changetourlanguage="changeLanguage_description();"
+/>
+
+  <!-- Fullscreen Management -->
+  <action name="exitFullScreen" devices="fullscreensupport">set(tour_fullscreen,false);js(setFullscreen(false));</action>
+  <action name="enterFullScreen" devices="fullscreensupport">set(tour_fullscreen,true);js(setFullscreen(true));</action>
+  <action name="switchFullScreen">if(tour_fullscreen,exitFullScreen();,enterFullScreen(););</action>
+
+  
+  <events name="krpanoExitFullscreenEvent"
+    onexitfullscreen="if(tour_fullscreen,exitFullScreenChangeEvent(););"
+    keep="true" />
+
+  <action name="exitFullScreenChangeEvent" devices="fullscreensupport">set(tour_fullscreen,false);events.dispatch(onexitfullscreen);</action>
+  <action name="enterFullScreenChangeEvent" devices="fullscreensupport">set(tour_fullscreen,true);events.dispatch(onenterfullscreen);</action>
+  <action name="exitFullScreenFallback">set(fullscreen,false);</action>
+  <action name="enterFullScreenFallback">set(fullscreen,true);</action>
+  
+  <action name="resizeFullScreenEvent">delayedcall(0,updatescreen(););</action>
+
+<action name="setViewArchitectural">
+	if(normalViewActivated,stopSetViewTweens(););
+	if(current_view_isflat === true,
+		setViewNonFlat(VFOV);
+	);
+	setViewArchitecturalComplete();
+</action>
+
+<action name="setViewArchitecturalComplete">
+	set(view.fovmax, get(panoview.fovmax));
+	set(view.fisheyefovlink, 0.5);
+	tween(view.architectural, 1.0, distance(1.0, 0.45));
+	tween(view.pannini, 0.0, distance(1.0, 0.45), easeOutQuad, if(panniniViewActivated,restoreViewFromPannini();););
+	tween(view.fisheye, 0.0, distance(1.0, 0.45), easeOutQuad, 
+		set(view.stereographic,false);
+		tween(view.vlookat, get(panoview.v), distance(90, 0.45));
+	);
+	tween(view.fov, get(panoview.fov), distance(50, 0.45));
+</action>
+
+<action name="viewControlZoomIn">
+	if(%1,
+		if(%2,
+			if(%2 LT view.fovmin,
+				zoomto(get(view.fovmin));
+			,
+				if(%2 LT view.fov,
+					zoomto(%2);
+				);
+			);
+		,
+			set(fov_moveforce, -1);
+			delayedcall(0.1, viewControlZoomStop());
+		);
+	,
+		set(fov_moveforce, -1);
+	);
+</action>
+<action name="viewControlZoomOut">
+	if(%1,
+		if(%2,
+			if(%2 GT view.fovmax,
+				zoomto(get(view.fovmax));
+			,
+				if(%2 GT view.fov,
+					zoomto(%2);
+				);
+			);
+		,
+			set(fov_moveforce, +1);
+			delayedcall(0.1, viewControlZoomStop());
+		);
+	,
+		set(fov_moveforce, +1);
+	);
+</action>
+<action name="viewControlZoomStop">
+	set(fov_moveforce, 0);
+</action>
+
+<action name="setViewLittlePlanet">
+	set(sceneisfull360, false);
+	if(scene[get(xml.scene)].full360,
+		sub(viewhfov, panoview.hmax, panoview.hmin);
+		if (viewhfov == 360,
+			sub(viewvfov, panoview.vmax, panoview.vmin);
+			if (viewvfov == 180,
+				set(sceneisfull360, true);
+			);
+		);
+	);
+	if (sceneisfull360 AND (device.webgl OR device.flash),
+		if(normalViewActivated,stopSetViewTweens(););
+		if(current_view_isflat === true,
+			setViewNonFlat(VFOV);
+		);
+		setViewLittlePlanetComplete();
+	);
+</action>
+
+<action name="setViewLittlePlanetComplete">
+	set(backtonormalfirst,false);
+	if(view.pannini GE 1.0, set(backtonormalfirst,true));
+	if(view.stereographic == false, set(backtonormalfirst,true));
+	if(backtonormalfirst, hideTooltip();tween(view.fisheye, 0.0 ,distance(1.0, 0.25), easeOutQuad, WAIT); );
+	set(view.stereographic, true);
+	set(view.fisheyefovlink, 1.5);
+	tween(view.architectural, 0.0, 0.25);
+	tween(view.vlookat, 90, distance(179, 1.50));
+	tween(view.pannini, 0.0, distance(1.0, 0.75), easeOutQuad, if(panniniViewActivated,restoreViewFromPannini();););
+	if(panoview.fovmax LE 150, set(view.fovmax, 150); , set(view.fovmax, get(panoview.fovmax)); );
+	tween(view.fisheye, 1.0, distance(1.0, 0.75));
+	tween(view.fov, 150, distance(179, 0.75));
+</action>
+
+  <action name="enableGyroscope">
+    changeGyroscopeState(true);
+  </action>
+  <action name="disableGyroscope">
+    changeGyroscopeState(false);
+  </action>
+
+
+<action name="viewControlMoveUp">
+	if(%1,
+		if(%2,
+			set(isfullvertical, false);
+			ifnot(scene[get(xml.scene)].planar,
+				sub(viewvfov, panoview.vmax, panoview.vmin);
+				if (viewvfov == 180,
+					set(isfullvertical, true);
+				);
+			);
+			if(isfullvertical == false AND calc(view.vlookat-%2) LT view.vlookatmin,
+				moveto(get(view.hlookat), get(view.vlookatmin));
+			,
+				moveto(get(view.hlookat), calc(view.vlookat-%2));
+			);
+		,
+			set(vlookat_moveforce, -1);
+			delayedcall(0.1, viewControlMoveVertStop());
+		);
+	,
+		set(vlookat_moveforce, -1);
+	);
+</action>
+<action name="viewControlMoveDown">
+	if(%1,
+		if(%2,
+			set(isfullvertical, false);
+			ifnot(scene[get(xml.scene)].planar,
+				sub(viewvfov, panoview.vmax, panoview.vmin);
+				if (viewvfov == 180,
+					set(isfullvertical, true);
+				);
+			);
+			if(sceneisfull360 == false AND calc(view.vlookat+%2) GT view.vlookatmax,
+				moveto(get(view.hlookat), get(view.vlookatmax));
+			,
+				moveto(get(view.hlookat), calc(view.vlookat+%2));
+			);
+		,
+			set(vlookat_moveforce, +1);
+			delayedcall(0.1, viewControlMoveVertStop());
+		);
+	,
+		set(vlookat_moveforce, +1);
+	);
+</action>
+<action name="viewControlMoveLeft">
+	if(%1,
+		if(%2,
+			set(isfullhorizontal, false);
+			ifnot(scene[get(xml.scene)].planar,
+				sub(viewhfov, panoview.hmax, panoview.hmin);
+				if (viewhfov == 360,
+					set(isfullhorizontal, true);
+				);
+			);
+			if(isfullhorizontal == false AND calc(view.hlookat-%2) LT view.hlookatmin,
+				moveto(get(view.hlookatmin), get(view.vlookat));
+			,
+				moveto(calc(view.hlookat-%2), get(view.vlookat));
+			);
+		,
+			set(hlookat_moveforce, -1);
+			delayedcall(0.1, viewControlMoveHoriStop());
+		);
+	,
+		set(hlookat_moveforce, -1);
+	);
+</action>
+<action name="viewControlMoveRight">
+	if(%1,
+		if(%2,
+			set(isfullhorizontal, false);
+			ifnot(scene[get(xml.scene)].planar,
+				sub(viewhfov, panoview.hmax, panoview.hmin);
+				if (viewhfov == 360,
+					set(isfullhorizontal, true);
+				);
+			);
+			if(isfullhorizontal == false AND calc(view.hlookat+%2) GT view.hlookatmax,
+				moveto(get(view.hlookatmax), get(view.vlookat));
+			,
+				moveto(calc(view.hlookat+%2), get(view.vlookat));
+			);
+		,
+			set(hlookat_moveforce, +1);
+			delayedcall(0.1, viewControlMoveHoriStop());
+			
+		);
+	,
+		set(hlookat_moveforce, +1);
+	);
+</action>
+<action name="viewControlMoveHoriStop">
+	set(hlookat_moveforce, 0);
+</action>
+<action name="viewControlMoveVertStop">
+	set(vlookat_moveforce, 0);
+</action>
+
+  <!-- Hide / Show Controls -->
+  <action name="hideTourControls">set(tour_displaycontrols, false);events.dispatch(hidetourcontrols);</action>
+  <action name="showTourControls">set(tour_displaycontrols, true); events.dispatch(showtourcontrols);</action>
+
+
+  <!-- MAP -->
+  <action name="hideMap">set(tour_displaymap, false);events.dispatch(onhidetourmap);</action>
+  <action name="showMap">set(tour_displaymap, true); events.dispatch(onshowtourmap);</action>
+
+  <!-- Tour Information -->
+  <action name="hideTourInfo">set(tour_displayinfo, false);events.dispatch(onhidetourinfo);</action>
+  <action name="showTourInfo">set(tour_displayinfo, true); events.dispatch(onshowtourinfo);</action>
+
+
+<action name="setViewNormal">
+	stopSetViewTweens();
+	if(current_view_isflat === true,
+		setViewNonFlat(VFOV);
+	);
+	setViewNormalComplete();
+</action>
+
+<action name="setViewNormalComplete">
+	set(view.fisheyefovlink, 0.5);
+	set(view.fovmax, get(panoview.fovmax));
+	tween(view.architectural, 0.0, distance(1.0, 0.45));
+	tween(view.pannini, 0.0, distance(1.0, 0.45), easeOutQuad, if(panniniViewActivated,restoreViewFromPannini();););
+	tween(view.vlookat, get(panoview.v), distance(90, 0.45));
+	tween(view.fov, get(panoview.fov), distance(50, 0.45));
+	tween(view.fisheye, 0.0, distance(1.0, 0.45),
+		set(view.stereographic,false);
+	);
+</action>
+
+<krpano normalViewActivated="true" />
+<action name="stopSetViewTweens">
+	stoptween(view.fov);
+	stoptween(view.vlookat);
+	stoptween(view.fisheye);
+	stoptween(view.architectural);
+	stoptween(view.pannini);
+</action>
+
+</krpano>
